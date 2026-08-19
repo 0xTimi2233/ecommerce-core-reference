@@ -1,0 +1,18 @@
+# Operating-system and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Tool output and local review artifacts
+coverage/
+dist/
+tmp/
+.review/

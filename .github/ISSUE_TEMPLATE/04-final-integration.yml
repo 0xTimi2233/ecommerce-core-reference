@@ -1,0 +1,44 @@
+name: Final Integration
+description: Compose completed Slices without adding domain rules.
+title: "Integration: "
+labels: ["type: final integration"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form only to compose proven Slices. Final Integration must not add a new domain rule. A new rule or missing behavior belongs in an Artifact or Slice.
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Completed Slice prerequisites
+      description: Link every completed Slice that this integration composes.
+    validations:
+      required: true
+  - type: textarea
+    id: composition
+    attributes:
+      label: Composition boundary
+      description: Describe the interfaces, adapters, or fixtures being composed.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Integration evidence
+      description: Define the end-to-end boundary observation and the real command or procedure.
+    validations:
+      required: true
+  - type: textarea
+    id: no_new_rules
+    attributes:
+      label: No new domain rules
+      description: Confirm that this work adds no domain rule; link a new Artifact or Slice if it does.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Residual risks and human review
+      description: State unresolved risks and the human expertise required to assess them.
+    validations:
+      required: true

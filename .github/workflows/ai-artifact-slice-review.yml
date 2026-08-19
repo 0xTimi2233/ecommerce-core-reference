@@ -1,0 +1,134 @@
+name: AI Artifact / Slice review
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+
+permissions: {}
+
+concurrency:
+  group: ai-artifact-slice-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: ai artifact/slice review / analyze
+    if: >-
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review: artifact-or-slice')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      verdict: ${{ steps.verdict.outputs.value }}
+    steps:
+      # v4.2.2; checkout only the trusted base revision, never PR code.
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Fetch bounded untrusted review input
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}" \
+            --jq '{number, title, body, base: .base.sha, head: .head.sha, changed_files, labels: [.labels[].name]}' \
+            > "$RUNNER_TEMP/metadata.json"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}" \
+            -H 'Accept: application/vnd.github.diff' > "$RUNNER_TEMP/pr.diff"
+          test "$(wc -c < "$RUNNER_TEMP/metadata.json")" -le 20000
+          test "$(wc -c < "$RUNNER_TEMP/pr.diff")" -le 200000
+      - name: Request bounded advisory analysis
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -n \
+            --rawfile prompt .github/review-prompts/ai-artifact-slice-review-v1.md \
+            --rawfile metadata "$RUNNER_TEMP/metadata.json" \
+            --rawfile diff "$RUNNER_TEMP/pr.diff" \
+            '{model: "deepseek-chat", temperature: 0, messages: [{role: "user", content: ($prompt + "\n\nUNTRUSTED PR METADATA:\n" + $metadata + "\n\nUNTRUSTED PR DIFF:\n" + $diff)}]}' \
+            > "$RUNNER_TEMP/request.json"
+          curl --fail-with-body --silent --show-error \
+            --request POST https://api.deepseek.com/chat/completions \
+            --header 'Content-Type: application/json' \
+            --header "Authorization: Bearer ${DEEPSEEK_API_KEY}" \
+            --data @"$RUNNER_TEMP/request.json" \
+            > "$RUNNER_TEMP/response.json"
+          jq -er '.choices[0].message.content' "$RUNNER_TEMP/response.json" > "$RUNNER_TEMP/ai-review.json"
+      - name: Validate machine-readable verdict
+        id: verdict
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/validate-ai-review.sh "$RUNNER_TEMP/ai-review.json" "$HEAD_SHA"
+          printf 'value=%s\n' "$(jq -r '.verdict' "$RUNNER_TEMP/ai-review.json")" >> "$GITHUB_OUTPUT"
+      - name: Preserve validated advisory report
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          name: ai-artifact-slice-review-report
+          path: ${{ runner.temp }}/ai-review.json
+          if-no-files-found: error
+          retention-days: 14
+
+  report:
+    name: ai artifact/slice review / report
+    needs: analyze
+    if: always() && needs.analyze.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      # This isolated write-back job never checks out or executes PR content.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ai-artifact-slice-review-report
+          path: report
+      - name: Publish fixed-format advisory status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          VERDICT: ${{ needs.analyze.outputs.verdict }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f report/ai-review.json
+          case "$VERDICT" in PASS|CHANGES_REQUIRED|ESCALATE|FAIL_CLOSED) ;; *) exit 1 ;; esac
+          jq -e --arg verdict "$VERDICT" --arg sha "$HEAD_SHA" \
+            '.schema == "ecommerce-ai-review/v1" and .verdict == $verdict and .head_sha == $sha' \
+            report/ai-review.json >/dev/null
+          jq -n --arg verdict "$VERDICT" --arg sha "$HEAD_SHA" \
+            '{body: ("AI advisory review completed for `" + $sha + "` with machine verdict: `" + $verdict + "`. Review the workflow artifact for bounded findings. Human review and approval remain required.")}' \
+            | gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --method POST --input -
+
+  gate:
+    name: ai artifact/slice review / verdict
+    needs: analyze
+    if: >-
+      always() && github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review: artifact-or-slice')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Fail closed unless advisory verdict passes
+        env:
+          ANALYZE_RESULT: ${{ needs.analyze.result }}
+          VERDICT: ${{ needs.analyze.outputs.verdict }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$ANALYZE_RESULT" = success
+          test "$VERDICT" = PASS

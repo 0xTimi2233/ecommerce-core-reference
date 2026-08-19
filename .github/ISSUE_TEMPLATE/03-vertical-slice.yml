@@ -1,0 +1,51 @@
+name: Vertical Slice
+description: Deliver one observable behavior with bounded TDD evidence.
+title: "Slice: "
+labels: ["type: slice"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One Slice delivers one observable behavior. Do not use this form for broad planning or final composition.
+  - type: textarea
+    id: feature
+    attributes:
+      label: Parent Feature and prerequisites
+      description: Link the parent Feature and required approved Artifacts or completed Slices.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observable behavior
+      description: State the single behavior and its externally observable result.
+    validations:
+      required: true
+  - type: textarea
+    id: outer
+    attributes:
+      label: Outer acceptance evidence
+      description: Name the acceptance-level test or observation and expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: inner
+    attributes:
+      label: Inner TDD evidence
+      description: Name the deterministic rule or state transition to drive with an inner test.
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Slice boundary
+      description: State adjacent behavior and integration work that this Slice excludes.
+    validations:
+      required: true
+  - type: textarea
+    id: review
+    attributes:
+      label: Human review focus
+      description: Identify decisions or risks reviewers must inspect beyond green tests.
+    validations:
+      required: true

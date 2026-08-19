@@ -1,0 +1,7 @@
+# Replace or extend this bootstrap owner mapping as the maintainer group grows.
+* @0xTimi2233
+
+# Governance and automation require explicit owner review.
+/.github/ @0xTimi2233
+/scripts/ @0xTimi2233
+/AGENTS.md @0xTimi2233

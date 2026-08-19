@@ -1,0 +1,11 @@
+name: action-pin-fixture
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: example/first-action@0123456789abcdef0123456789abcdef01234567
+      - name: A named external action is still an Action reference
+        uses: example/second-action@89abcdef0123456789abcdef0123456789abcdef
+      - uses: ./local-action
+      - uses: docker://example/reviewer@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

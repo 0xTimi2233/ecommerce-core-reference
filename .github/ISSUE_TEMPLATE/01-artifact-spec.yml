@@ -1,0 +1,44 @@
+name: Artifact / Spec
+description: Bound a decision and its evidence before implementation.
+title: "Artifact: "
+labels: ["type: artifact"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a decision or specification. Do not use it to deliver implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Decision to make
+      description: State the problem, affected boundary, and decision needed.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options and recommendation
+      description: Compare viable options and state the recommended decision with trade-offs.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance evidence
+      description: Define the evidence that would show the decision is usable and bounded.
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Explicit exclusions
+      description: Name work that this Artifact does not authorize.
+    validations:
+      required: true
+  - type: textarea
+    id: review
+    attributes:
+      label: Human review needed
+      description: Identify the human roles or expertise needed to accept this decision.
+    validations:
+      required: true

@@ -1,0 +1,44 @@
+name: Feature
+description: Plan a coherent outcome made of approved Vertical Slices.
+title: "Feature: "
+labels: ["type: feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to organize approved work. A Feature is not an implementation slice or integration proof.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Intended outcome
+      description: Describe the user or system outcome without prescribing unrelated implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Required Artifacts / Specs
+      description: Link the decisions this Feature depends on, or state why none are needed.
+    validations:
+      required: true
+  - type: textarea
+    id: slices
+    attributes:
+      label: Planned Vertical Slices
+      description: List independently reviewable behaviors; each gets its own Slice Issue.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Boundary and exclusions
+      description: State what this Feature will not implement or integrate.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Feature completion evidence
+      description: Define how completed Slices will demonstrate the outcome to human reviewers.
+    validations:
+      required: true
