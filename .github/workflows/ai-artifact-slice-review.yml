@@ -74,7 +74,7 @@ jobs:
           ./scripts/validate-ai-review.sh "$RUNNER_TEMP/ai-review.json" "$HEAD_SHA"
           printf 'value=%s\n' "$(jq -r '.verdict' "$RUNNER_TEMP/ai-review.json")" >> "$GITHUB_OUTPUT"
       - name: Preserve validated advisory report
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: ai-artifact-slice-review-report
           path: ${{ runner.temp }}/ai-review.json
